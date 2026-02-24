@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>US Burger | حجز طاولة</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{
+  box-sizing:border-box;
+  font-family:'Cairo',sans-serif;
+}
+body{
+  background:#f2f2f2;
+  margin:0;
+  direction:rtl;
+}
+/* Notification */
+.notification{
+  position:fixed;
+  top:-80px;
+  left:0;
+  width:100%;
+  background:#111;
+  color:#fff;
+  text-align:center;
+  padding:15px;
+  font-size:16px;
+  z-index:9999;
+  transition:all .4s ease;
+}
+.notification.show{
+  top:0;
+}
+/* Header */
+.header{
+  background:#8B0000;
+  color:#fff;
+  text-align:center;
+  padding:15px;
+  font-size:20px;
+  font-weight:bold;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:10px;
+}
+/* Logo */
+.logo{
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  object-fit:cover;
+  background:#fff;
+  padding:2px;
+}
+/* Card */
+.container{
+  width:100%;
+  max-width:420px;
+  background:#fff;
+  margin:20px auto;
+  padding:20px;
+  border-radius:15px;
+  box-shadow:0 5px 15px rgba(0,0,0,.15);
+}
+.container h2{
+  text-align:center;
+  color:#8B0000;
+  margin-bottom:20px;
+}
+label{
+  font-weight:600;
+  display:block;
+  margin:12px 0 6px;
+}
+input,select,textarea{
+  width:100%;
+  padding:12px;
+  border:1.5px solid #8B0000;
+  border-radius:8px;
+  margin-bottom:10px;
+  font-size:16px;
+  background:#fff;
+  min-height:48px;
+}
+textarea{
+  resize:none;
+  height:80px;
+}
+input:focus,select:focus,textarea:focus{
+  outline:none;
+  border-color:#B22222;
+  box-shadow:0 0 5px rgba(139,0,0,0,.3);
+}
+button{
+  width:100%;
+  background:#8B0000;
+  color:white;
+  border:none;
+  padding:14px;
+  font-size:17px;
+  border-radius:8px;
+  cursor:pointer;
+  margin-top:15px;
+}
+button:hover{
+  background:#B22222;
+}
+</style>
+</head>
+<body>
+
+<!-- Notification -->
+<div id="notify" class="notification">
+  ✅ تم الحجز بنجاح
+</div>
+
+<!-- Header -->
+<div class="header">
+  <img src="US.jpg" class="logo" alt="US Burger Logo">
+  US Burger - حجز طاولة
+</div>
+
+<!-- Card -->
+<div class="container">
+<h2>احجز طاولتك الآن</h2>
+<form id="bookingForm">
+
+  <label>الاسم الكامل</label>
+  <input type="text" id="name" required>
+
+  <label>رقم الجوال</label>
+  <input type="tel" id="phone" required>
+
+  <label>عدد الأشخاص</label>
+  <select id="guests" required>
+    <option value="">اختر</option>
+    <option>1</option>
+    <option>2</option>
+    <option>3</option>
+    <option>4</option>
+    <option>5</option>
+    <option>6</option>
+  </select>
+
+  <label>التاريخ</label>
+  <input type="date" id="date" required>
+
+  <label>الوقت</label>
+  <input type="time" id="time" required>
+
+  <label>ملاحظات</label>
+  <textarea id="notes"></textarea>
+
+  <button type="submit">احجز الآن</button>
+</form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+
+const SUPABASE_URL = "https://mweceenimyqhwcocpfst.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13ZWNlZW5pbXlxaHdjb2NwZnN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3ODY3NTMsImV4cCI6MjA4NzM2Mjc1M30.uAJWFkU5PvfnEdIFFS33EQuOOnOvvDotoI1JELO49I8";
+
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* Show Notification */
+function showNotification(){
+  const notify = document.getElementById("notify");
+  notify.classList.add("show");
+  setTimeout(()=>{
+    notify.classList.remove("show");
+  },3000);
+}
+
+/* Form Submit */
+document.getElementById("bookingForm")
+.addEventListener("submit", async (e)=>{
+  e.preventDefault();
+
+  const name   = document.getElementById("name").value.trim();
+  const phone  = document.getElementById("phone").value.trim();
+  const guests = document.getElementById("guests").value;
+  const date   = document.getElementById("date").value;
+  const time   = document.getElementById("time").value;
+  const notes  = document.getElementById("notes").value.trim() || "لا يوجد";
+
+  const booking = {
+    name,
+    phone,
+    guests:Number(guests),
+    date,
+    time,
+    notes
+  };
+
+  // ✨ Save to Supabase
+  const { error } = await db
+    .from("reservations")
+    .insert([booking]);
+
+  if(error){
+    console.error(error);
+    alert("❌ فشل الحجز");
+    return;
+  }
+
+  // ✨ Send to Google Form
+  const googleFormURL = "https://docs.google.com/forms/d/e/1FAIpQLSffdmUWifhYX5e2vdlrcQXMDdiIFdP-JIjmS-6AHOyrDJsmHA/formResponse";
+
+  const formData = new FormData();
+  formData.append("entry.1988127656", name);
+  formData.append("entry.1091286234", phone);
+  formData.append("entry.788776603", date);
+  formData.append("entry.228998652", time);
+  formData.append("entry.2007306475", notes);
+
+  fetch(googleFormURL,{
+    method:"POST",
+    mode:"no-cors",
+    body:formData
+  });
+
+  showNotification();
+  e.target.reset();
+});
+
+</script>
+</body>
+</html>
