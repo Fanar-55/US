@@ -3,19 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>US Burger | حجز طاولة</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+
 <style>
+
 *{
   box-sizing:border-box;
   font-family:'Cairo',sans-serif;
 }
+
 body{
   background:#f2f2f2;
   margin:0;
   direction:rtl;
 }
+
 /* Notification */
 .notification{
   position:fixed;
@@ -30,9 +35,11 @@ body{
   z-index:9999;
   transition:all .4s ease;
 }
+
 .notification.show{
   top:0;
 }
+
 /* Header */
 .header{
   background:#8B0000;
@@ -46,6 +53,7 @@ body{
   align-items:center;
   gap:10px;
 }
+
 /* Logo */
 .logo{
   width:32px;
@@ -55,6 +63,7 @@ body{
   background:#fff;
   padding:2px;
 }
+
 /* Card */
 .container{
   width:100%;
@@ -65,16 +74,19 @@ body{
   border-radius:15px;
   box-shadow:0 5px 15px rgba(0,0,0,.15);
 }
+
 .container h2{
   text-align:center;
   color:#8B0000;
   margin-bottom:20px;
 }
+
 label{
   font-weight:600;
   display:block;
   margin:12px 0 6px;
 }
+
 input,select,textarea{
   width:100%;
   padding:12px;
@@ -85,15 +97,30 @@ input,select,textarea{
   background:#fff;
   min-height:48px;
 }
+
+/* Fix Date & Time */
+input[type="date"],
+input[type="time"]{
+  width:100%;
+  appearance:none;
+  -webkit-appearance:none;
+  text-align:right;
+  padding:12px;
+}
+
 textarea{
   resize:none;
   height:80px;
 }
-input:focus,select:focus,textarea:focus{
+
+input:focus,
+select:focus,
+textarea:focus{
   outline:none;
   border-color:#B22222;
   box-shadow:0 0 5px rgba(139,0,0,0,.3);
 }
+
 button{
   width:100%;
   background:#8B0000;
@@ -105,11 +132,14 @@ button{
   cursor:pointer;
   margin-top:15px;
 }
+
 button:hover{
   background:#B22222;
 }
+
 </style>
 </head>
+
 <body>
 
 <!-- Notification -->
@@ -119,13 +149,15 @@ button:hover{
 
 <!-- Header -->
 <div class="header">
-  <img src="US.jpg" class="logo" alt="US Burger Logo">
+  <img src="US.jpg" class="logo">
   US Burger - حجز طاولة
 </div>
 
 <!-- Card -->
 <div class="container">
+
 <h2>احجز طاولتك الآن</h2>
+
 <form id="bookingForm">
 
   <label>الاسم الكامل</label>
@@ -155,29 +187,73 @@ button:hover{
   <textarea id="notes"></textarea>
 
   <button type="submit">احجز الآن</button>
+
 </form>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
+
+/* ================= Ramadan Dates (2026 Example) ================= */
+
+const RAMADAN_START = "2026-02-26"; // 9 رمضان
+const RAMADAN_END   = "2026-03-04"; // 15 رمضان
+
+const dateInput = document.getElementById("date");
+const timeInput = document.getElementById("time");
+
+dateInput.min = RAMADAN_START;
+dateInput.max = RAMADAN_END;
+
+timeInput.min = "21:00";
+timeInput.max = "23:59";
+
+/* Allow 12AM–4AM */
+timeInput.addEventListener("change", ()=>{
+
+  const time = timeInput.value;
+
+  if (
+    (time >= "21:00" && time <= "23:59") ||
+    (time >= "00:00" && time <= "04:00")
+  ){
+    return;
+  }
+
+  alert("⏰ الحجز من 9 مساءً إلى 4 صباحًا فقط");
+  timeInput.value = "";
+});
+
+
+/* ================= Supabase ================= */
 
 const SUPABASE_URL = "https://mweceenimyqhwcocpfst.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13ZWNlZW5pbXlxaHdjb2NwZnN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3ODY3NTMsImV4cCI6MjA4NzM2Mjc1M30.uAJWFkU5PvfnEdIFFS33EQuOOnOvvDotoI1JELO49I8";
 
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-/* Show Notification */
+
+/* ================= Notification ================= */
+
 function showNotification(){
+
   const notify = document.getElementById("notify");
+
   notify.classList.add("show");
+
   setTimeout(()=>{
     notify.classList.remove("show");
   },3000);
 }
 
-/* Form Submit */
+
+/* ================= Submit ================= */
+
 document.getElementById("bookingForm")
 .addEventListener("submit", async (e)=>{
+
   e.preventDefault();
 
   const name   = document.getElementById("name").value.trim();
@@ -186,6 +262,24 @@ document.getElementById("bookingForm")
   const date   = document.getElementById("date").value;
   const time   = document.getElementById("time").value;
   const notes  = document.getElementById("notes").value.trim() || "لا يوجد";
+
+
+  /* Validate Date */
+  if (date < RAMADAN_START || date > RAMADAN_END){
+    alert("📅 الحجز من 9 رمضان إلى 15 رمضان فقط");
+    return;
+  }
+
+  /* Validate Time */
+  const validTime =
+    (time >= "21:00" && time <= "23:59") ||
+    (time >= "00:00" && time <= "04:00");
+
+  if (!validTime){
+    alert("⏰ الحجز من 9 مساءً إلى 4 صباحًا فقط");
+    return;
+  }
+
 
   const booking = {
     name,
@@ -196,7 +290,8 @@ document.getElementById("bookingForm")
     notes
   };
 
-  // ✨ Save to Supabase
+
+  /* Save to Supabase */
   const { error } = await db
     .from("reservations")
     .insert([booking]);
@@ -207,10 +302,13 @@ document.getElementById("bookingForm")
     return;
   }
 
-  // ✨ Send to Google Form
-  const googleFormURL = "https://docs.google.com/forms/d/e/1FAIpQLSffdmUWifhYX5e2vdlrcQXMDdiIFdP-JIjmS-6AHOyrDJsmHA/formResponse";
+
+  /* Send to Google Form */
+  const googleFormURL =
+  "https://docs.google.com/forms/d/e/1FAIpQLSffdmUWifhYX5e2vdlrcQXMDdiIFdP-JIjmS-6AHOyrDJsmHA/formResponse";
 
   const formData = new FormData();
+
   formData.append("entry.1988127656", name);
   formData.append("entry.1091286234", phone);
   formData.append("entry.788776603", date);
@@ -223,10 +321,13 @@ document.getElementById("bookingForm")
     body:formData
   });
 
+
   showNotification();
   e.target.reset();
+
 });
 
 </script>
+
 </body>
 </html>
