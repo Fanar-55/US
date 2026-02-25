@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+]<!DOCTYPE html>
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
@@ -302,19 +302,24 @@ document.getElementById("bookingForm")
     tempForm.appendChild(input);
   }
 
-  document.body.appendChild(tempForm);
-  tempForm.submit();
+ document.body.appendChild(tempForm);
+
+tempForm.setAttribute("rel", "noopener");
+tempForm.submit();
+
+setTimeout(() => {
   document.body.removeChild(tempForm);
+}, 1000);
 
-  showNotification();
-  e.target.reset();
-
+showNotification();
+e.target.reset();
 });
 
 </script>
 <iframe name="hidden_iframe" style="display:none;"></iframe>
 </body>
 </html>
+
 
 
 
