@@ -8,14 +8,8 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
 
-<!-- Hijri Date Picker -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hijri-datepicker/dist/css/hijri-datepicker.min.css">
-<script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/moment/min/moment.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/moment-hijri/moment-hijri.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/hijri-datepicker/dist/js/hijri-datepicker.min.js"></script>
-
 <style>
+
 *{
   box-sizing:border-box;
   font-family:'Cairo',sans-serif;
@@ -104,9 +98,27 @@ input,select,textarea{
   min-height:48px;
 }
 
+/* Fix Date & Time */
+input[type="date"],
+input[type="time"]{
+  width:100%;
+  appearance:none;
+  -webkit-appearance:none;
+  text-align:right;
+  padding:12px;
+}
+
 textarea{
   resize:none;
   height:80px;
+}
+
+input:focus,
+select:focus,
+textarea:focus{
+  outline:none;
+  border-color:#B22222;
+  box-shadow:0 0 5px rgba(139,0,0,0,.3);
 }
 
 button{
@@ -120,23 +132,28 @@ button{
   cursor:pointer;
   margin-top:15px;
 }
+
 button:hover{
   background:#B22222;
 }
+
 </style>
 </head>
 
 <body>
 
+<!-- Notification -->
 <div id="notify" class="notification">
   ✅ تم الحجز بنجاح
 </div>
 
+<!-- Header -->
 <div class="header">
   <img src="US.jpg" class="logo">
   US Burger - حجز طاولة
 </div>
 
+<!-- Card -->
 <div class="container">
 
 <h2>احجز طاولتك الآن</h2>
@@ -160,10 +177,8 @@ button:hover{
     <option>6</option>
   </select>
 
-  <label>التاريخ (هجري)</label>
-  <input type="text" id="hijriDate" required readonly>
-
-  <input type="hidden" id="date">
+  <label>التاريخ</label>
+  <input type="date" id="date" required>
 
   <label>الوقت</label>
   <input type="time" id="time" required>
@@ -181,67 +196,65 @@ button:hover{
 
 <script>
 
-$(function(){
+/* ================= Hijri Filter (No Library) ================= */
 
-  $("#hijriDate").hijriDatePicker({
-    locale: "ar-sa",
-    hijri: true,
-    showSwitcher: false,
-    allowInputToggle: true,
-    showClear: false,
+const dateInput = document.getElementById("date");
+const timeInput = document.getElementById("time");
+const nameInput = document.getElementById("name");
+const phoneInput = document.getElementById("phone");
+const guestsInput = document.getElementById("guests");
+const notesInput = document.getElementById("notes");
 
-    minDate: "i1447-09-09",
-    maxDate: "i1447-09-15",
+function toHijri(date){
 
-    format: "iYYYY/iMM/iDD",
-
-    hijriFormat: "iYYYY/iMM/iDD",
-
-    useCurrent: false
+  const fmt = new Intl.DateTimeFormat("ar-SA-u-ca-islamic",{
+    day:"numeric",
+    month:"numeric",
+    year:"numeric"
   });
 
-  $("#hijriDate").on("dp.change", function(e){
+  const parts = fmt.formatToParts(date);
 
-    const hijri = e.date.format("iYYYY-iMM-iDD");
-    const greg = e.date.format("YYYY-MM-DD");
+  let d,m,y;
 
-    $("#date").val(greg);
-    $("#hijriDate").val(hijri);
-
+  parts.forEach(p=>{
+    if(p.type==="day") d=parseInt(p.value);
+    if(p.type==="month") m=parseInt(p.value);
+    if(p.type==="year") y=parseInt(p.value);
   });
 
-});
+  return {day:d,month:m,year:y};
+}
+
+// السماح فقط 9–15 رمضان
+function validRamadan(dateStr){
+
+  if(!dateStr) return false;
+
+  const g = new Date(dateStr);
+  const h = toHijri(g);
+
+  return h.month===9 && h.day>=9 && h.day<=15;
+}
 
 
 /* ================= Time ================= */
 
-const timeInput = document.getElementById("time");
+timeInput.min="21:00";
+timeInput.max="23:59";
 
-timeInput.min = "21:00";
-timeInput.max = "23:59";
+timeInput.addEventListener("change",()=>{
 
-timeInput.addEventListener("change", ()=>{
+  const t=timeInput.value;
 
-  const time = timeInput.value;
-
-  if (
-    (time >= "21:00" && time <= "23:59") ||
-    (time >= "00:00" && time <= "04:00")
-  ){
-    return;
-  }
+  if(
+    (t>="21:00"&&t<="23:59")||
+    (t>="00:00"&&t<="04:00")
+  ) return;
 
   alert("⏰ الحجز من 9 مساءً إلى 4 صباحًا فقط");
-  timeInput.value = "";
+  timeInput.value="";
 });
-
-
-/* ================= Supabase ================= */
-
-const SUPABASE_URL = "https://mweceenimyqhwcocpfst.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13ZWNlZW5pbXlxaHdjb2NwZnN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3ODY3NTMsImV4cCI6MjA4NzM2Mjc1M30.uAJWFkU5PvfnEdIFFS33EQuOOnOvvDotoI1JELO49I8";
-
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 
 /* ================= Notification ================= */
@@ -258,6 +271,14 @@ function showNotification(){
 }
 
 
+/* ================= Supabase ================= */
+
+const SUPABASE_URL = "https://mweceenimyqhwcocpfst.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13ZWNlZW5pbXlxaHdjb2NwZnN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3ODY3NTMsImV4cCI6MjA4NzM2Mjc1M30.uAJWFkU5PvfnEdIFFS33EQuOOnOvvDotoI1JELO49I8";
+
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+
 /* ================= Submit ================= */
 
 document.getElementById("bookingForm")
@@ -265,16 +286,16 @@ document.getElementById("bookingForm")
 
   e.preventDefault();
 
-  const name   = document.getElementById("name").value.trim();
-  const phone  = document.getElementById("phone").value.trim();
-  const guests = document.getElementById("guests").value;
-  const date   = document.getElementById("date").value;
-  const time   = document.getElementById("time").value;
-  const notes  = document.getElementById("notes").value.trim() || "لا يوجد";
+  const name   = nameInput.value.trim();
+  const phone  = phoneInput.value.trim();
+  const guests = guestsInput.value;
+  const date   = dateInput.value;
+  const time   = timeInput.value;
+  const notes  = notesInput.value.trim() || "لا يوجد";
 
 
-  if(!date){
-    alert("📅 اختر تاريخًا هجريًا صحيحًا");
+  if(!validRamadan(date)){
+    alert("📅 الحجز من 9 رمضان إلى 15 رمضان فقط");
     return;
   }
 
