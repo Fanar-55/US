@@ -6,7 +6,7 @@
 
 <title>US Burger | حجز طاولة</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?familyCairo:wght@400;600;700&display=swap" rel="stylesheet">
 
 <style>
 
@@ -196,21 +196,50 @@ button:hover{
 
 <script>
 
-/* ================= Ramadan Dates (2026 Example) ================= */
-
-const RAMADAN_START = "2026-02-26"; // 9 رمضان
-const RAMADAN_END   = "2026-03-04"; // 15 رمضان
+/* ================= Hijri Ramadan Dates ================= */
 
 const dateInput = document.getElementById("date");
 const timeInput = document.getElementById("time");
 
-dateInput.min = RAMADAN_START;
-dateInput.max = RAMADAN_END;
+function toHijri(date){
+
+  const formatter = new Intl.DateTimeFormat("ar-SA-u-ca-islamic",{
+    day:"numeric",
+    month:"numeric",
+    year:"numeric"
+  });
+
+  const parts = formatter.formatToParts(date);
+
+  let day, month, year;
+
+  parts.forEach(p=>{
+    if(p.type==="day") day = parseInt(p.value);
+    if(p.type==="month") month = parseInt(p.value);
+    if(p.type==="year") year = parseInt(p.value);
+  });
+
+  return { day, month, year };
+}
+
+function isValidRamadan(dateStr){
+
+  const gDate = new Date(dateStr);
+  const hDate = toHijri(gDate);
+
+  if(hDate.month !== 9) return false;
+
+  if(hDate.day < 9 || hDate.day > 15) return false;
+
+  return true;
+}
+
+
+/* ================= Time Limits ================= */
 
 timeInput.min = "21:00";
 timeInput.max = "23:59";
 
-/* Allow 12AM–4AM */
 timeInput.addEventListener("change", ()=>{
 
   const time = timeInput.value;
@@ -265,7 +294,7 @@ document.getElementById("bookingForm")
 
 
   /* Validate Date */
-  if (date < RAMADAN_START || date > RAMADAN_END){
+  if (!isValidRamadan(date)){
     alert("📅 الحجز من 9 رمضان إلى 15 رمضان فقط");
     return;
   }
