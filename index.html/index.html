@@ -6,10 +6,16 @@
 
 <title>US Burger | حجز طاولة</title>
 
-<link href="https://fonts.googleapis.com/css2?familyCairo:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+
+<!-- Hijri Date Picker -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hijri-datepicker/dist/css/hijri-datepicker.min.css">
+<script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment/min/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment-hijri/moment-hijri.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hijri-datepicker/dist/js/hijri-datepicker.min.js"></script>
 
 <style>
-
 *{
   box-sizing:border-box;
   font-family:'Cairo',sans-serif;
@@ -98,27 +104,9 @@ input,select,textarea{
   min-height:48px;
 }
 
-/* Fix Date & Time */
-input[type="date"],
-input[type="time"]{
-  width:100%;
-  appearance:none;
-  -webkit-appearance:none;
-  text-align:right;
-  padding:12px;
-}
-
 textarea{
   resize:none;
   height:80px;
-}
-
-input:focus,
-select:focus,
-textarea:focus{
-  outline:none;
-  border-color:#B22222;
-  box-shadow:0 0 5px rgba(139,0,0,0,.3);
 }
 
 button{
@@ -132,28 +120,23 @@ button{
   cursor:pointer;
   margin-top:15px;
 }
-
 button:hover{
   background:#B22222;
 }
-
 </style>
 </head>
 
 <body>
 
-<!-- Notification -->
 <div id="notify" class="notification">
   ✅ تم الحجز بنجاح
 </div>
 
-<!-- Header -->
 <div class="header">
   <img src="US.jpg" class="logo">
   US Burger - حجز طاولة
 </div>
 
-<!-- Card -->
 <div class="container">
 
 <h2>احجز طاولتك الآن</h2>
@@ -177,8 +160,10 @@ button:hover{
     <option>6</option>
   </select>
 
-  <label>التاريخ</label>
-  <input type="date" id="date" required>
+  <label>التاريخ (هجري)</label>
+  <input type="text" id="hijriDate" required readonly>
+
+  <input type="hidden" id="date">
 
   <label>الوقت</label>
   <input type="time" id="time" required>
@@ -196,46 +181,41 @@ button:hover{
 
 <script>
 
-/* ================= Hijri Ramadan Dates ================= */
+$(function(){
 
-const dateInput = document.getElementById("date");
+  $("#hijriDate").hijriDatePicker({
+    locale: "ar-sa",
+    hijri: true,
+    showSwitcher: false,
+    allowInputToggle: true,
+    showClear: false,
+
+    minDate: "i1447-09-09",
+    maxDate: "i1447-09-15",
+
+    format: "iYYYY/iMM/iDD",
+
+    hijriFormat: "iYYYY/iMM/iDD",
+
+    useCurrent: false
+  });
+
+  $("#hijriDate").on("dp.change", function(e){
+
+    const hijri = e.date.format("iYYYY-iMM-iDD");
+    const greg = e.date.format("YYYY-MM-DD");
+
+    $("#date").val(greg);
+    $("#hijriDate").val(hijri);
+
+  });
+
+});
+
+
+/* ================= Time ================= */
+
 const timeInput = document.getElementById("time");
-
-function toHijri(date){
-
-  const formatter = new Intl.DateTimeFormat("ar-SA-u-ca-islamic",{
-    day:"numeric",
-    month:"numeric",
-    year:"numeric"
-  });
-
-  const parts = formatter.formatToParts(date);
-
-  let day, month, year;
-
-  parts.forEach(p=>{
-    if(p.type==="day") day = parseInt(p.value);
-    if(p.type==="month") month = parseInt(p.value);
-    if(p.type==="year") year = parseInt(p.value);
-  });
-
-  return { day, month, year };
-}
-
-function isValidRamadan(dateStr){
-
-  const gDate = new Date(dateStr);
-  const hDate = toHijri(gDate);
-
-  if(hDate.month !== 9) return false;
-
-  if(hDate.day < 9 || hDate.day > 15) return false;
-
-  return true;
-}
-
-
-/* ================= Time Limits ================= */
 
 timeInput.min = "21:00";
 timeInput.max = "23:59";
@@ -293,13 +273,12 @@ document.getElementById("bookingForm")
   const notes  = document.getElementById("notes").value.trim() || "لا يوجد";
 
 
-  /* Validate Date */
-  if (!isValidRamadan(date)){
-    alert("📅 الحجز من 9 رمضان إلى 15 رمضان فقط");
+  if(!date){
+    alert("📅 اختر تاريخًا هجريًا صحيحًا");
     return;
   }
 
-  /* Validate Time */
+
   const validTime =
     (time >= "21:00" && time <= "23:59") ||
     (time >= "00:00" && time <= "04:00");
@@ -320,7 +299,6 @@ document.getElementById("bookingForm")
   };
 
 
-  /* Save to Supabase */
   const { error } = await db
     .from("reservations")
     .insert([booking]);
@@ -330,25 +308,6 @@ document.getElementById("bookingForm")
     alert("❌ فشل الحجز");
     return;
   }
-
-
-  /* Send to Google Form */
-  const googleFormURL =
-  "https://docs.google.com/forms/d/e/1FAIpQLSffdmUWifhYX5e2vdlrcQXMDdiIFdP-JIjmS-6AHOyrDJsmHA/formResponse";
-
-  const formData = new FormData();
-
-  formData.append("entry.1988127656", name);
-  formData.append("entry.1091286234", phone);
-  formData.append("entry.788776603", date);
-  formData.append("entry.228998652", time);
-  formData.append("entry.2007306475", notes);
-
-  fetch(googleFormURL,{
-    method:"POST",
-    mode:"no-cors",
-    body:formData
-  });
 
 
   showNotification();
