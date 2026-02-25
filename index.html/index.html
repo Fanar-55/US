@@ -119,13 +119,11 @@ button:hover{
   background:#B22222;
 }
 
-.hijri-row{
-  display:flex;
-  gap:6px;
-}
-
-.hijri-row select{
-  flex:1;
+.fixed-date{
+  background:#eee;
+  text-align:center;
+  font-weight:600;
+  color:#444;
 }
 
 </style>
@@ -165,27 +163,30 @@ button:hover{
     <option>6</option>
   </select>
 
-  <!-- Hijri Date -->
+  <!-- Fixed Hijri -->
   <label>التاريخ (هجري)</label>
 
-  <div class="hijri-row">
+  <input
+    type="text"
+    class="fixed-date"
+    value="رمضان 1447 هـ"
+    readonly
+  >
 
-    <select id="hday" required>
-      <option value="">يوم</option>
-    </select>
+  <label>اختر اليوم (من 9 إلى 15)</label>
 
-    <select id="hmonth" required>
-      <option value="">شهر</option>
-      <option value="9">رمضان</option>
-    </select>
+  <select id="hday" required>
+    <option value="">اختر اليوم</option>
+    <option value="9">9</option>
+    <option value="10">10</option>
+    <option value="11">11</option>
+    <option value="12">12</option>
+    <option value="13">13</option>
+    <option value="14">14</option>
+    <option value="15">15</option>
+  </select>
 
-    <select id="hyear" required>
-      <option value="">سنة</option>
-    </select>
-
-  </div>
-
-  <!-- Hidden Gregorian -->
+  <!-- Hidden -->
   <input type="hidden" id="date">
 
   <label>الوقت</label>
@@ -204,41 +205,20 @@ button:hover{
 
 <script>
 
-/* ================= Hijri Selector ================= */
+/* ================= Fixed Ramadan 1447 ================= */
 
-const hday   = document.getElementById("hday");
-const hmonth = document.getElementById("hmonth");
-const hyear  = document.getElementById("hyear");
-const dateInput = document.getElementById("date");
+const hday=document.getElementById("hday");
+const dateInput=document.getElementById("date");
 
-// سنوات (عدّل لو حبيت)
-for(let y=1446; y<=1452; y++){
-  const o=document.createElement("option");
-  o.value=y;
-  o.textContent=y;
-  hyear.append(o);
-}
+// تحويل تلقائي لصيغة ثابتة
+hday.addEventListener("change",()=>{
 
-// أيام رمضان فقط 9–15
-for(let i=9;i<=15;i++){
-  const o=document.createElement("option");
-  o.value=i;
-  o.textContent=i;
-  hday.append(o);
-}
-
-function updateDate(){
-
-  if(hday.value && hmonth.value && hyear.value){
+  if(hday.value){
 
     dateInput.value =
-      `${hyear.value}-${hmonth.value}-${hday.value}`;
+      `1447-09-${hday.value.padStart(2,"0")}`;
   }
-}
-
-hday.addEventListener("change",updateDate);
-hmonth.addEventListener("change",updateDate);
-hyear.addEventListener("change",updateDate);
+});
 
 
 /* ================= Time ================= */
@@ -289,7 +269,7 @@ document.getElementById("bookingForm")
 
   e.preventDefault();
 
-  const name=name.value?.trim()||document.getElementById("name").value.trim();
+  const name=document.getElementById("name").value.trim();
   const phone=document.getElementById("phone").value.trim();
   const guests=document.getElementById("guests").value;
   const date=dateInput.value;
@@ -298,7 +278,7 @@ document.getElementById("bookingForm")
 
 
   if(!date){
-    alert("📅 اختر تاريخًا هجريًا صحيحًا");
+    alert("📅 اختر يومًا من 9 إلى 15 رمضان");
     return;
   }
 
